@@ -52,16 +52,16 @@ namespace HarmonyLib
 				prefixHarmony = new HarmonyMethod(prefix);
 			}
 			if (postfix != null) {
-				postfixHarmony = new HarmonyMethod(prefix);
+				postfixHarmony = new HarmonyMethod(postfix);
 			}
 			if (transpiler != null) {
-				transpilerHarmony = new HarmonyMethod(prefix);
+				transpilerHarmony = new HarmonyMethod(transpiler);
 			}
 			if (finalizer != null) {
-				finalizerHarmony = new HarmonyMethod(prefix);
+				finalizerHarmony = new HarmonyMethod(finalizer);
 			}
 			if (ilmanipulator != null) {
-				ilmanipulatorHarmony = new HarmonyMethod(prefix);
+				ilmanipulatorHarmony = new HarmonyMethod(ilmanipulator);
 			}
 
 			return harmony.Patch(original,
@@ -89,16 +89,16 @@ namespace HarmonyLib
 				prefixHarmony = new HarmonyMethod(prefix.Method);
 			}
 			if (postfix != null) {
-				postfixHarmony = new HarmonyMethod(prefix.Method);
+				postfixHarmony = new HarmonyMethod(postfix.Method);
 			}
 			if (transpiler != null) {
-				transpilerHarmony = new HarmonyMethod(prefix.Method);
+				transpilerHarmony = new HarmonyMethod(transpiler.Method);
 			}
 			if (finalizer != null) {
-				finalizerHarmony = new HarmonyMethod(prefix.Method);
+				finalizerHarmony = new HarmonyMethod(finalizer.Method);
 			}
 			if (ilmanipulator != null) {
-				ilmanipulatorHarmony = new HarmonyMethod(prefix.Method);
+				ilmanipulatorHarmony = new HarmonyMethod(ilmanipulator.Method);
 			}
 
 			return harmony.Patch(original,

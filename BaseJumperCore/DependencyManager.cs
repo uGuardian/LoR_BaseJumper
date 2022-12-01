@@ -13,7 +13,6 @@ namespace BaseJumperAPI.DependencyManager {
 				original: new Action<List<Mod.ModContentInfo>, List<Mod.ModContentInfo>>(
 					Singleton<Mod.ModContentManager>.Instance.SaveSelectionData).Method,
 				prefix: new Action(AddByMode_PreFix));
-				base.Initialize();
 			}
 		}
 		public static void AddByMode_PreFix() => FinalizeDependencySystem();

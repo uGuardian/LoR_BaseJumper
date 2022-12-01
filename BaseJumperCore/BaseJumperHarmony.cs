@@ -131,7 +131,9 @@ namespace BaseJumperAPI.Harmony {
 			}
 			GameObject gameObject = assetBundle.LoadAsset<GameObject>($"{internalPath}/{resourceName}.prefab");
 			if (gameObject == null) {
+				#if DEBUG
 				Debug.LogError("load asset failed : " + resourceName);
+				#endif
 				// assetBundle.Unload(true);
 				return;
 			}
