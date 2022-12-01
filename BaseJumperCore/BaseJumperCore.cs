@@ -18,7 +18,7 @@ using BaseJumperAPI.Harmony;
 
 namespace BaseJumperAPI {
 	public static class Globals {
-		public const string Version = "0.0.6.0";
+		public const string Version = "0.0.6.1";
 	}
 	public static class Extensions {
 		public static string TrimEnd(this string source, string value) {
@@ -29,7 +29,7 @@ namespace BaseJumperAPI {
 	}
 
 	public abstract class GlobalInitializer {
-		public virtual void Initialize() {} 
+		public abstract void Initialize();
 	}
 	public interface IInstanceInitializer {
 		void Initialize();
@@ -114,7 +114,7 @@ namespace BaseJumperAPI {
 		public readonly ModContent modContent;
 		public readonly DirectoryInfo _dirInfo;
 
-		private BaseJumperModule() {}
+		protected BaseJumperModule() {}
 		public BaseJumperModule(string packageId) {
 			this.modContent = Singleton<ModContentManager>.Instance.GetModContent(packageId);
 			this.packageId = modContent._itemUniqueId;
