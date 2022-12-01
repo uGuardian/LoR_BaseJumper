@@ -134,24 +134,28 @@ namespace BaseJumperAPI.Harmony {
 				#if DEBUG
 				Debug.LogError("load asset failed : " + resourceName);
 				#endif
-				// assetBundle.Unload(true);
 				return;
 			}
-			var appearance = gameObject.GetComponent<CharacterAppearance>();
-			if (appearance._motionList.RemoveAll(x => x == null) > 0) {
-				Debug.LogWarning($"BaseJumperCore: MotionList for {resourceName} had null references in it");
-			}
 
-			/*
-			var placeholderShader = assetBundle.LoadAsset<Material>("Material/Sprites-Default").shader;
-			var found = Array.FindAll(gameObject.GetComponentsInChildren<SpriteRenderer>(), r =>
-				r.sharedMaterial.shader == placeholderShader);
-			*//*
-			var found = gameObject.GetComponentsInChildren<SpriteRenderer>();
-			foreach (var material in found.Select(r => r.sharedMaterial).Distinct()) {
-				material.shader = SdResourceObjectPatch.defaultSpriteShader;
+			#region SanityChecking
+			var appearance = gameObject.GetComponent<CharacterAppearance>();
+			if (appearance.atkEffectRoot == null) {
+				var newObject = new GameObject("atkEffectRoot").transform;
+				newObject.SetParent(appearance.transform, false);
+				appearance.atkEffectRoot = newObject;
+				Debug.LogError($"BaseJumperCore: AtkEffectRoot for {resourceName} was null, a substitute has been added");
 			}
-			*/
+			int motionRemovals = appearance._motionList.RemoveAll(x => x == null);
+			if (motionRemovals > 0) {
+				Debug.LogError($"BaseJumperCore: MotionList for {resourceName} had {motionRemovals} null motions in it");
+			}
+			foreach (var motion in appearance._motionList) {
+				int spriteSetRemovals = motion.motionSpriteSet.RemoveAll(x => x == null);
+				if (spriteSetRemovals > 0) {
+					Debug.LogError($"BaseJumperCore: Action {motion.actionDetail} for {resourceName} had {spriteSetRemovals} null sprites in it");
+				}
+			}
+			#endregion
 
 			AssetBundleManagerRemake.AssetResourceCacheData resourceCacheData = new AssetBundleManagerRemake.AssetResourceCacheData {
 				asset = assetBundle,
