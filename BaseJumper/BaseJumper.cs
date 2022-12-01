@@ -105,23 +105,26 @@ public class BaseJumper : ModInitializer {
 			} else {
 				PackageId = PackageId;
 			}
-			var depInstance = DependencyManager.Register(PackageId, DependencyManagedInitialize, DepId, Version, Priority);
-			var deps = Dependencies;
-			if (deps != null) {
-				foreach (var dep in deps) {
-					depInstance.AddDependency(dep.modId,
-						dep.depId,
-						dep.minVersion,
-						dep.maxVersion,
-						dep.isPostDependency,
-						dep.optional,
-						dep.steamId);
-				}
-			}
+			RegisterDependencies();
 		} catch (Exception ex) {
 			AddErrorLog(ex);
 		} finally {
 			PushErrorLogs();
+		}
+	}
+	private void RegisterDependencies() {
+		var depInstance = DependencyManager.Register(PackageId, DependencyManagedInitialize, DepId, Version, Priority);
+		var deps = Dependencies;
+		if (deps != null) {
+			foreach (var dep in deps) {
+				depInstance.AddDependency(dep.modId,
+					dep.depId,
+					dep.minVersion,
+					dep.maxVersion,
+					dep.isPostDependency,
+					dep.optional,
+					dep.steamId);
+			}
 		}
 	}
 	private void DependencyManagedInitialize() {
