@@ -57,8 +57,7 @@ namespace Mod.XmlExtended {
 		public static XmlAttributeOverrides GetAttributeOverrides() {
 			XmlAttributeOverrides overrides = new XmlAttributeOverrides();
 			overrides.Add(typeof(EmotionCardXmlRoot), "EmotionCardXmlRoot", new XmlAttributes { XmlIgnore = true });
-			overrides.Add(typeof(EmotionCardXmlInfo), "EmotionCardXmlInfo", new XmlAttributes { XmlIgnore = true });
-			overrides.Add(typeof(List<EmotionCardXmlInfo>), "emotionCardXmlList", new XmlAttributes { XmlIgnore = true });
+			overrides.Add(typeof(EmotionCardXmlRoot), "emotionCardXmlList", new XmlAttributes { XmlIgnore = true });
 			return overrides;
 		}
 	}
@@ -68,5 +67,7 @@ namespace Mod.XmlExtended {
 		public string pid;
 		[XmlIgnore]
 		public LorId lorId;
+		[XmlElement]
+		public LOR_XML.AbnormalityCard Default_Description;
 	}
 }
