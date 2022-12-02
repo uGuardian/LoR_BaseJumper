@@ -46,6 +46,8 @@ namespace XmlLoaders {
 						if (addStatuses[tuple] == 1) {
 							addStatuses[tuple] = 2;
 						}
+					} else {
+						addStatuses[tuple] = 0;
 					}
 					newEmotionCards[tuple] = emotionCard;
 				} else {
@@ -77,6 +79,15 @@ namespace XmlLoaders {
 						}
 						emotionCard.id = newId;
 						originList.Add(emotionCard);
+						var description = emotionCard.Default_Description;
+						if (description != null) {
+							var id = emotionCard.Name;
+							description.id = id;
+							var descDic = Singleton<AbnormalityCardDescXmlList>.Instance._dictionary;
+							if (!descDic.ContainsKey(id)) {
+								descDic.Add(id, description);
+							}
+						}
 						normalizedIds[tuple] = newId;
 						addStatuses[tuple] = 1;
 						break;
