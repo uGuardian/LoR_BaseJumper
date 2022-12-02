@@ -383,7 +383,7 @@ namespace BaseJumperAPI {
 				if (finalizers == null) {
 					finalizers = new List<Action<BaseJumperModule>> {
 						xmlLoader.AddEquipPageByModFinalizer,
-						// xmlLoaderCustom.AddEmotionCardByModFinalizer,
+						xmlLoaderCustom.AddEmotionCardByModFinalizer,
 					};
 				}
 				return finalizers;
