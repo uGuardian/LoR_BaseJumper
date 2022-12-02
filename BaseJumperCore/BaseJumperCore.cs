@@ -231,8 +231,8 @@ namespace BaseJumperAPI {
 					//		((xmlLoader.LoadPassive, null), out entry), entry},
 
 						// Custom Serializers
-					//	{XmlSerializerEntry<EmotionCardXmlRoot_Extended, List<EmotionCardXmlInfo_Extended>>
-					//		((xmlLoaderCustom.LoadEmotionCard, xmlLoaderCustom.AddEmotionCardByMod), out entry), entry},
+						{XmlSerializerEntry<EmotionCardXmlRoot_Extended, List<EmotionCardXmlInfo_Extended>>
+							((xmlLoaderCustom.LoadEmotionCard, xmlLoaderCustom.AddEmotionCardByMod), out entry), entry},
 					};
 				}
 				return xmlTypes;
