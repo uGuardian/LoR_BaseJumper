@@ -17,9 +17,6 @@ using BaseJumperAPI.Harmony;
 #pragma warning restore CS0618
 
 namespace BaseJumperAPI {
-	public static class Globals {
-		public const string Version = "0.0.6.2";
-	}
 	public static class Extensions {
 		public static string TrimEnd(this string source, string value) {
 			if (!source.EndsWith(value))
