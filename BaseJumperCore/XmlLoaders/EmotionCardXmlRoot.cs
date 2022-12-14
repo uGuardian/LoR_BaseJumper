@@ -11,6 +11,7 @@ using Workshop;
 using Mod;
 using Mod.XmlExtended;
 using BaseJumperAPI;
+using BaseJumperAPI.Harmony;
 
 namespace XmlLoaders {
 	public partial class CustomLoader {
@@ -59,7 +60,7 @@ namespace XmlLoaders {
 				}
 			}
 		}
-		public void AddEmotionCardByModFinalizer(BaseJumperModule _) {
+		public void AddEmotionCardByModFinalizer(BaseJumperModule module) {
 			var originList = Singleton<EmotionCardXmlList>.Instance._list;
 			foreach (var emotionCard in vanillaOverrides.Values) {
 				int cardIndex = originList.FindIndex(c => c.id == emotionCard.id && c.Sephirah == emotionCard.Sephirah);
@@ -78,6 +79,7 @@ namespace XmlLoaders {
 							existingCard = filterList.Exists(c => c.id == newId);
 						}
 						emotionCard.id = newId;
+						UIAbnormalityCategoryPanelPatches.SetUsingAbnormalityPages(module);
 						originList.Add(emotionCard);
 						var description = emotionCard.Default_Description;
 						if (description != null) {

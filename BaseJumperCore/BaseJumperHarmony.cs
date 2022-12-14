@@ -34,7 +34,9 @@ namespace BaseJumperAPI.Harmony {
 					try {
 						isUsingCharacterBundles = true;
 						Apply();
+						#if DEBUG
 						Debug.Log($"{caller.ModuleName}: Harmony patch applied");
+						#endif
 					} catch (AggregateException ae) {
 						ae.Handle(ex => {
 							if (caller != null) {
@@ -203,7 +205,9 @@ namespace BaseJumperAPI.Harmony {
 								.GetMethod(nameof(BookModel.SetXmlInfo), AccessTools.all),
 							postfix: new HarmonyMethod(typeof(SetXmlInfoPatch).GetMethod(nameof(Postfix)))
 						);
+						#if DEBUG
 						Debug.Log($"{caller.ModuleName}: Harmony patch applied");
+						#endif
 					} catch (AggregateException ae) {
 						ae.Handle(ex => {
 							if (caller != null) {
@@ -235,6 +239,65 @@ namespace BaseJumperAPI.Harmony {
 						}
 					}
 				}
+			}
+		}
+	}
+	public static class UIAbnormalityCategoryPanelPatches {
+		internal static bool isUsingAbnormalityPages;
+		public static void SetUsingAbnormalityPages(BaseJumperModule caller) {
+			if (!isUsingAbnormalityPages) {
+				Debug.Log($"{caller.ModuleName}: Adding abnormality page patches");
+				try {
+					isUsingAbnormalityPages = true;
+					SetDataPatch.Apply();
+					#if DEBUG
+					Debug.Log($"{caller.ModuleName}: Harmony patch applied");
+					#endif
+				} catch (AggregateException ae) {
+					ae.Handle(ex => {
+						if (caller != null) {
+							caller.AddErrorLog(ex);
+						} else {
+							Debug.LogError(ex);
+						}
+						return true;
+					});
+				} catch (Exception ex) {
+					if (caller != null) {
+						caller.AddErrorLog(ex);
+					} else {
+						Debug.LogError(ex);
+					}
+				}
+			}
+		}
+		public static class SetDataPatch {
+			internal static void Apply() {
+				// TODO Make it expand the abno menu
+				var harmony = Globals.harmony;
+				/* Use this if more than one patch gets added
+				harmony.WaitForPatches(
+					harmony.PatchAsync(
+						original: typeof(UI.UIAbnormalityCategoryPanel)
+							.GetMethod(nameof(UI.UIAbnormalityCategoryPanel.SetData)),
+						finalizer: new Func<Exception, Exception>(Finalizer)
+					)
+				);
+				*/
+				harmony.Patch(
+					original: typeof(UI.UIAbnormalityCategoryPanel)
+						.GetMethod(nameof(UI.UIAbnormalityCategoryPanel.SetData)),
+					finalizer: new Func<Exception, Exception>(Finalizer)
+				);
+			}
+			public static Exception Finalizer(Exception __exception) {
+				if (__exception is ArgumentOutOfRangeException) {
+					#if DEBUG
+					Debug.LogException(__exception);
+					#endif
+					return null;
+				}
+				return __exception;
 			}
 		}
 	}
