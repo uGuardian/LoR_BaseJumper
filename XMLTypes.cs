@@ -24,7 +24,19 @@ namespace BaseJumperAPI {
 		// Custom Serializers
 	//	EmotionCard =		0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0000_0000,
 
-		//All Serializers implemented in current version
-		ALL = EquipPage,
+		// All Serializers implemented in current version
+		ALL =
+	//	Stage |
+	//	EnemyUnit |
+		EquipPage
+	//	CardDropTable |
+	//	DropBook |
+	//	CardInfo |
+	//	Deck |
+	//	BattleDialog |
+	//	BookStory |
+	//	Passive |
+
+	//	EmotionCard
 	}
 }
