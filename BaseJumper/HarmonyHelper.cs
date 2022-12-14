@@ -46,8 +46,7 @@ namespace BaseJumperAPI {
 			HarmonyMethod transpiler = null,
 			HarmonyMethod finalizer = null,
 			HarmonyMethod ilmanipulator = null)
-			=> Task.Run(()
-				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator));
+				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator);
 		public Task<MethodInfo> PatchAsync(
 			MethodBase original,
 			MethodInfo prefix = null,
@@ -55,8 +54,7 @@ namespace BaseJumperAPI {
 			MethodInfo transpiler = null,
 			MethodInfo finalizer = null,
 			MethodInfo ilmanipulator = null)
-			=> Task.Run(()
-				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator));
+				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator);
 		public Task<MethodInfo> PatchAsync(
 			MethodBase original,
 			Delegate prefix = null,
@@ -64,8 +62,7 @@ namespace BaseJumperAPI {
 			Delegate transpiler = null,
 			Delegate finalizer = null,
 			Delegate ilmanipulator = null)
-			=> Task.Run(()
-				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator));
+				=> Harmony.PatchAsync(original, prefix, postfix, transpiler, finalizer, ilmanipulator);
 		public MethodInfo[] WaitForPatches(IEnumerable<Task<MethodInfo>> list)
 			=> Harmony.WaitForPatches(list);
 		public MethodInfo[] WaitForPatches(params Task<MethodInfo>[] list)
