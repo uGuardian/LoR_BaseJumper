@@ -6,14 +6,9 @@ using LOR_DiceSystem;
 using LOR_XML;
 using UnityEngine;
 using Workshop;
-using System.Security.Permissions;
 using Mod;
 using System.Linq;
 using System.IO;
-
-#pragma warning disable CS0618
-[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
-#pragma warning restore CS0618
 
 namespace Mod {
 	public static partial class CustomXmlLoader_Extensions {
