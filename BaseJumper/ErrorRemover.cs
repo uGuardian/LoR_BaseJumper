@@ -7,7 +7,7 @@ namespace ErrorRemover {
 		public override void OnInitializeMod() => ErrorRemover.RemoveErrors();
 	}
 	public static class ErrorRemover {
-		const string exists = "The same assembly name already exists. : "; 
+		static readonly string exists = "The same assembly name already exists. : "; 
 		public static void RemoveErrors() {
 			var dllList = new string[] {
 				$"{exists}0Harmony",
