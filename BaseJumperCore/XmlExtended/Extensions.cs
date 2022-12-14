@@ -16,10 +16,13 @@ namespace Mod.XmlExtended.Extensions {
 			}
 			return instance._list.OfType<EmotionCardXmlInfo_Extended>().FirstOrDefault(x => x.id == id.id && x.Sephirah == sephirah);
 		}
+		// Due to technical limitations, can't handle mods with alternative LorId implementations.
+		public static List<EmotionCardXmlInfo> GetEnemyEmotionCardList(this EmotionCardXmlList instance, params LorId[] ids) =>
+			GetEnemyEmotionCardList(instance, ids);
 		public static List<EmotionCardXmlInfo> GetEnemyEmotionCardList(this EmotionCardXmlList instance, IEnumerable<LorId> ids) {
 			var filter = ids.ToLookup(x => x.IsBasic());
-			var basic = filter[true].Select(x => x.id).ToHashSet();
-			var extended = filter[false].ToHashSet();
+			HashSet<int> basic = filter[true].Select(x => x.id).ToHashSet();
+			HashSet<LorId> extended = filter[false].ToHashSet();
 			return instance._list.Where(x => (x.Sephirah == SephirahType.None) && (basic.Contains(x.id) ||
 				(x is EmotionCardXmlInfo_Extended e && extended.Contains(e.lorId)))).ToList();
 		}
