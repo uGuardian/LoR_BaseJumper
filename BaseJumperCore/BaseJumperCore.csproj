@@ -10,6 +10,7 @@
 	<Compile Remove="ExampleReplacer_nStrip.cs"/>
 	<Compile Remove="DependencyStorage.cs"/>
 	<Compile Remove="HashHelpers.cs"/>
+	<Compile Include="..\Globals.cs"/>
 	<Compile Include="..\XMLTypes.cs"/>
 	<PackageReference Include="HarmonyX" Version="2.5.3"/>
 	<Compile Include="..\BaseJumper_HarmonyExtensions\HarmonyExtensions.cs" />
