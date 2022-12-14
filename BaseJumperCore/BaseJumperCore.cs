@@ -213,8 +213,6 @@ namespace BaseJumperAPI {
 					//		((xmlLoader.LoadEnemyUnit, null), out entry), entry},
 						{XmlSerializerEntry<BookXmlRoot_Extended, List<BookXmlInfo_Extended>>
 							((xmlLoader.LoadEquipPage, xmlLoader.AddEquipPageByMod), out entry), entry},
-					//	{XmlSerializerEntry<BookXmlRoot>
-					//		((xmlLoader.LoadEquipEnemyPage, out entry), entry},
 					//	{XmlSerializerEntry<CardDropTableXmlRoot>
 					//		((xmlLoader.LoadCardDropTable, null), out entry), entry},
 					//	{XmlSerializerEntry<BookUseXmlRoot>
