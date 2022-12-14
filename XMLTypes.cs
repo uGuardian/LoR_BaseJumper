@@ -1,6 +1,10 @@
 using System;
 
+#if CoreBuild
 namespace BaseJumperAPI {
+#else
+public partial class BaseJumper : ModInitializer {
+#endif
 	// This is for convienience, and is not actually a shared type between the assemblies, and must be parsed as a ulong.
 	[Flags] public enum XMLTypes : ulong {
 		NONE =				0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000,
@@ -24,7 +28,19 @@ namespace BaseJumperAPI {
 		// Custom Serializers
 		EmotionCard =		0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0000_0000,
 
-		//All Serializers implemented in current version
-		ALL = EquipPage | EmotionCard,
+		// All Serializers implemented in current version
+		ALL =
+	//	Stage |
+	//	EnemyUnit |
+		EquipPage |
+	//	CardDropTable |
+	//	DropBook |
+	//	CardInfo |
+	//	Deck |
+	//	BattleDialog |
+	//	BookStory |
+	//	Passive |
+
+		EmotionCard
 	}
 }

@@ -16,7 +16,7 @@ using BaseJumperAPI;
 using BaseJumperAPI.DependencyManager;
 using System.Runtime.CompilerServices;
 
-public class BaseJumper : ModInitializer {
+public partial class BaseJumper : ModInitializer {
 	public virtual string PackageId {get; protected set;}
 	private ModContent modContent;
 	public ModContent ModContent { get => modContent; protected set => modContent = value; }
@@ -149,7 +149,6 @@ public class BaseJumper : ModInitializer {
 	public virtual void BaseJumper_OnInitialize() {}
 	private void AutoInit() {
 		var xmlTypes = AutoInitXmls;
-		#pragma warning disable CS0436
 		if ((xmlTypes != XMLTypes.NONE) || charAssetBundleQueue != null) {
 			var module = BaseJumperModule.GetModule<BaseJumperCore>(this) ??
 				BaseJumperModule.NewModule(this, new BaseJumperCore(PackageId, ModContent, DirInfo));
@@ -159,7 +158,6 @@ public class BaseJumper : ModInitializer {
 				}
 				module.InitCustomXmls(dataDir, (ulong)xmlTypes);
 			}
-		#pragma warning restore CS0436
 			if (charAssetBundleQueue != null) {
 				var count = charAssetBundleQueue.Count;
 				for (int i = 0; i < count; i++) {
@@ -340,9 +338,7 @@ public class BaseJumper : ModInitializer {
 				}
 			}
 		}
-		#pragma warning disable CS0436
 		readonly Version baseJumperVersion = new Version(Globals.Version);
-		#pragma warning restore CS0436
 		static ((AssemblyName assembly, System.IO.FileInfo info), int count) GetSeed() {
 			/*
 			var assembly = Assembly.GetExecutingAssembly();

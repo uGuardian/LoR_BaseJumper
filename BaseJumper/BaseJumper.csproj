@@ -8,7 +8,6 @@
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-	<Compile Include="..\Globals.cs"/>
 	<Compile Include="..\XMLTypes.cs"/>
 	<ProjectReference Include="..\BaseJumperCore\BaseJumperCore.csproj" />
 	<Reference Include="Accessibility">
