@@ -22,7 +22,7 @@ public class BaseJumper : ModInitializer {
 	public ModContent ModContent { get => modContent; protected set => modContent = value; }
 	private DirectoryInfo _dirInfo;
 	public DirectoryInfo DirInfo { get => _dirInfo; protected set => _dirInfo = value; }
-	protected virtual bool AutoInitXmls => true;
+	protected virtual XMLTypes AutoInitXmls => XMLTypes.ALL;
 	public virtual bool IsCancelExecution => GetType() == typeof(BaseJumper);
 	protected Queue<(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath)> charAssetBundleQueue;
 	protected Queue<(string skinName, IEnumerable<string> dependencies)> charAssetBundleDependencyQueue;
@@ -146,14 +146,15 @@ public class BaseJumper : ModInitializer {
 	}
 	public virtual void BaseJumper_OnInitialize() {}
 	private void AutoInit() {
-		if (AutoInitXmls || charAssetBundleQueue != null) {
+		var xmlTypes = AutoInitXmls;
+		if ((xmlTypes != XMLTypes.NONE) || charAssetBundleQueue != null) {
 			var module = BaseJumperModule.GetModule<BaseJumperCore>(this) ??
 				BaseJumperModule.NewModule(this, new BaseJumperCore(PackageId, ModContent, DirInfo));
-			if (AutoInitXmls) {
+			if (xmlTypes != XMLTypes.NONE) {
 				if (dataDir == null) {
 					throw new FileNotFoundException("Data directory does not exist");
 				}
-				module.InitCustomXmls(dataDir);
+				module.InitCustomXmls(dataDir, (ulong)xmlTypes);
 			}
 			if (charAssetBundleQueue != null) {
 				var count = charAssetBundleQueue.Count;

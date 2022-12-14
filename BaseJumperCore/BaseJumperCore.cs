@@ -200,42 +200,73 @@ namespace BaseJumperAPI {
 		protected virtual Dictionary<Type, (XmlSerializer serializer, (Func<BaseJumperModule, object, object> loadAction, Action<BaseJumperModule, object> addAction) actions)> XmlTypes {
 			get {
 				if (xmlTypes == null) {
-					(XmlSerializer serializer, (Func<BaseJumperModule, object, object> loadAction, Action<BaseJumperModule, object> addAction) actions) entry;
-					xmlTypes = new Dictionary<Type, (XmlSerializer serializer, (Func<BaseJumperModule, object, object> loadAction, Action<BaseJumperModule, object> addAction) actions)>{
-						// Obsolete All-In-One Deserializer
-					//	{XmlSerializerEntry<AllRoots>>
-					//		((xmlLoader.Loads, null), out entry), entry},
-
-						// Default Serializers
-					//	{XmlSerializerEntry<StageXmlRoot, List<PassiveXmlInfo>>
-					//		((xmlLoader.LoadStage, null), out entry), entry},
-					//	{XmlSerializerEntry<EnemyUnitClassRoot>
-					//		((xmlLoader.LoadEnemyUnit, null), out entry), entry},
-						{XmlSerializerEntry<BookXmlRoot_Extended, List<BookXmlInfo_Extended>>
-							((xmlLoader.LoadEquipPage, xmlLoader.AddEquipPageByMod), out entry), entry},
-					//	{XmlSerializerEntry<BookXmlRoot>
-					//		((xmlLoader.LoadEquipEnemyPage, out entry), entry},
-					//	{XmlSerializerEntry<CardDropTableXmlRoot>
-					//		((xmlLoader.LoadCardDropTable, null), out entry), entry},
-					//	{XmlSerializerEntry<BookUseXmlRoot>
-					//		((xmlLoader.LoadDropBook, null), out entry), entry},
-					//	{XmlSerializerEntry<DiceCardXmlRoot_Extended>
-					//		((xmlLoader.LoadCardInfo, null), out entry), entry},
-					//	{XmlSerializerEntry<DeckXmlRoot>
-					//		((xmlLoader.LoadDeck, null), out entry), entry},
-					//	{XmlSerializerEntry<BattleDialogRoot>
-					//		((xmlLoader.LoadDialog, null), out entry), entry},
-					//	{XmlSerializerEntry<BookDescRoot>
-					//		((xmlLoader.LoadBookStory, null), out entry), entry},
-					//	{XmlSerializerEntry<PassiveXmlInfo>
-					//		((xmlLoader.LoadPassive, null), out entry), entry},
-
-						// Custom Serializers
-						{XmlSerializerEntry<EmotionCardXmlRoot_Extended, List<EmotionCardXmlInfo_Extended>>
-							((xmlLoaderCustom.LoadEmotionCard, xmlLoaderCustom.AddEmotionCardByMod), out entry), entry},
-					};
+					AddErrorLog("xmlTypes was inproperly initialized");
+					InitXMLTypes(XMLTypes.ALL);
 				}
 				return xmlTypes;
+			}
+		}
+		protected void InitXMLTypes(XMLTypes types) {
+			(XmlSerializer serializer, (Func<BaseJumperModule, object, object> loadAction, Action<BaseJumperModule, object> addAction) actions) entry;
+			var xmlTypes = new Dictionary<Type, (XmlSerializer serializer, (Func<BaseJumperModule, object, object> loadAction, Action<BaseJumperModule, object> addAction) actions)>();
+			this.xmlTypes = xmlTypes;
+			var finalizers = new List<Action<BaseJumperModule>>();
+			this.finalizers = finalizers;
+
+			// Obsolete All-In-One Deserializer
+		/*
+				xmlTypes.Add(XmlSerializerEntry<AllRoots>>
+					((xmlLoader.Loads, null), out entry), entry);
+		*/
+
+			// Default Serializers
+		/*	if (types.HasFlag(XMLTypes.Stage)) {
+				xmlTypes.Add(XmlSerializerEntry<StageXmlRoot, List<PassiveXmlInfo>>
+					((xmlLoader.LoadStage, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.EnemyUnit)) {
+				xmlTypes.Add(XmlSerializerEntry<EnemyUnitClassRoot>
+					((xmlLoader.LoadEnemyUnit, null), out entry), entry);
+			}*/
+			if (types.HasFlag(XMLTypes.EquipPage)) {
+				xmlTypes.Add(XmlSerializerEntry<BookXmlRoot_Extended, List<BookXmlInfo_Extended>>
+					((xmlLoader.LoadEquipPage, xmlLoader.AddEquipPageByMod), out entry), entry);
+				finalizers.Add(xmlLoader.AddEquipPageByModFinalizer);
+			}
+		/*	if (types.HasFlag(XMLTypes.CardDropTable)) {
+				xmlTypes.Add(XmlSerializerEntry<CardDropTableXmlRoot>
+					((xmlLoader.LoadCardDropTable, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.DropBook)) {
+				xmlTypes.Add(XmlSerializerEntry<BookUseXmlRoot>
+					((xmlLoader.LoadDropBook, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.CardInfo)) {
+				xmlTypes.Add(XmlSerializerEntry<DiceCardXmlRoot_Extended>
+					((xmlLoader.LoadCardInfo, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.Deck)) {
+				xmlTypes.Add(XmlSerializerEntry<DeckXmlRoot>
+					((xmlLoader.LoadDeck, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.BattleDialog)) {
+				xmlTypes.Add(XmlSerializerEntry<BattleDialogRoot>
+					((xmlLoader.LoadDialog, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.BookStory)) {
+				xmlTypes.Add(XmlSerializerEntry<BookDescRoot>
+					((xmlLoader.LoadBookStory, null), out entry), entry);
+			}*/
+		/*	if (types.HasFlag(XMLTypes.Passive)) {
+				xmlTypes.Add(XmlSerializerEntry<PassiveXmlInfo>
+					((xmlLoader.LoadPassive, null), out entry), entry);
+			}*/
+
+			// Custom Serializers
+			if (types.HasFlag(XMLTypes.EmotionCard)) {
+				xmlTypes.Add(XmlSerializerEntry<EmotionCardXmlRoot_Extended, List<EmotionCardXmlInfo_Extended>>
+					((xmlLoaderCustom.LoadEmotionCard, xmlLoaderCustom.AddEmotionCardByMod), out entry), entry);
+				finalizers.Add(xmlLoaderCustom.AddEmotionCardByModFinalizer);
 			}
 		}
 
@@ -292,7 +323,13 @@ namespace BaseJumperAPI {
 		public void AddXmlSerializer<T, O>((Func<BaseJumperModule, T, O>, Action<BaseJumperModule, O> addAction) actions) {
 			XmlTypes.Add(XmlSerializerEntry<T, O>(actions, out var entry), entry);
 		}
-		public void InitCustomXmls(DirectoryInfo dataDir) {
+		public virtual void InitCustomXmls(DirectoryInfo dataDir, ulong xmltypes) {
+			InitXMLTypes((XMLTypes)xmltypes);
+			InitCustomXmls_Internal(dataDir);
+		}
+		[Obsolete("Use InitCustomXmls(DirectoryInfo, ulong) instead")]
+		public void InitCustomXmls(DirectoryInfo dataDir) => InitCustomXmls(dataDir, (ulong)XMLTypes.ALL);
+		protected void InitCustomXmls_Internal(DirectoryInfo dataDir) {
 			Task.Run(async () => await InitCustomXmlsAsync(dataDir)).Wait();
 			foreach (var action in Finalizers) {
 				try {
@@ -381,10 +418,8 @@ namespace BaseJumperAPI {
 		public virtual List<Action<BaseJumperModule>> Finalizers {
 			get {
 				if (finalizers == null) {
-					finalizers = new List<Action<BaseJumperModule>> {
-						xmlLoader.AddEquipPageByModFinalizer,
-						xmlLoaderCustom.AddEmotionCardByModFinalizer,
-					};
+					AddErrorLog("xmlTypes was inproperly initialized");
+					InitXMLTypes(XMLTypes.ALL);
 				}
 				return finalizers;
 			}
