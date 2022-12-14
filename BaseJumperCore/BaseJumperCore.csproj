@@ -4,6 +4,7 @@
 	<TargetFramework>net472</TargetFramework>
 	<DebugType>pdbonly</DebugType>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<DefineConstants>$(DefineConstants);CoreBuild</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
 	<Compile Remove="ExampleReplacer.cs"/>

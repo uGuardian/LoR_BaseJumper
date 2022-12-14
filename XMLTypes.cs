@@ -1,6 +1,10 @@
 using System;
 
+#if CoreBuild
 namespace BaseJumperAPI {
+#else
+public partial class BaseJumper : ModInitializer {
+#endif
 	// This is for convienience, and is not actually a shared type between the assemblies, and must be parsed as a ulong.
 	[Flags] public enum XMLTypes : ulong {
 		NONE =				0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000,
