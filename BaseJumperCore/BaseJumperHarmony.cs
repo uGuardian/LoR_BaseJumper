@@ -22,38 +22,48 @@ namespace BaseJumperAPI.Harmony {
 	public static class Globals {
 		public readonly static HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("LoR.uGuardian.BaseJumperCore");
 	}
-	public static class AssetBundlePatches {
-		public static class SdResourceObjectPatch {
-			internal static bool isUsingCharacterBundles = false;
-			// internal static Shader defaultSpriteShader;
-			public static void SetUsingCharacterBundles(BaseJumperModule caller) {
-				if (!isUsingCharacterBundles) {
-					Debug.Log($"{caller.ModuleName}: Adding character bundle functions");
-					// defaultSpriteShader = Resources.Load<GameObject>("Prefabs/Characters/[Prefab]Appearance_Custom")
-					//	.GetComponentInChildren<SpriteRenderer>().sharedMaterial.shader;
-					try {
-						isUsingCharacterBundles = true;
-						Apply();
-						Debug.Log($"{caller.ModuleName}: Harmony patch applied");
-					} catch (AggregateException ae) {
-						ae.Handle(ex => {
-							if (caller != null) {
-								caller.AddErrorLog(ex);
-							} else {
-								Debug.LogError(ex);
-							}
-							return true;
-						});
-					} catch (Exception ex) {
+	public abstract class LazyHarmony<T> where T : LazyHarmony<T>, new() {
+		private static T instance;
+		private static T Instance {
+			get {
+				if (instance == null) {
+					instance = new T();
+				}
+				return instance;
+			}
+		}
+		public bool IsPatched {get; private set;}
+		public static void Activate(BaseJumperModule caller) {
+			var instance = Instance;
+			if (!instance.IsPatched) {
+				try {
+					instance.IsPatched = true;
+					instance.Apply();
+					Debug.Log($"{caller.ModuleName}: {typeof(T)} patch applied");
+				} catch (AggregateException ae) {
+					ae.Handle(ex => {
 						if (caller != null) {
 							caller.AddErrorLog(ex);
 						} else {
 							Debug.LogError(ex);
 						}
+						return true;
+					});
+				} catch (Exception ex) {
+					if (caller != null) {
+						caller.AddErrorLog(ex);
+					} else {
+						Debug.LogError(ex);
 					}
 				}
 			}
-			internal static void Apply() {
+		}
+		protected abstract void Apply();
+	}
+	public static class AssetBundlePatches {
+		public class SdResourceObjectPatch : LazyHarmony<SdResourceObjectPatch> {
+			internal static bool isUsingCharacterBundles = false;
+			protected override void Apply() {
 				var harmony = Globals.harmony;
 				harmony.WaitForPatches(
 					harmony.PatchAsync(
@@ -191,36 +201,14 @@ namespace BaseJumperAPI.Harmony {
 		
 	}
 	public static class OnlyPagePatches {
-		public static class SetXmlInfoPatch {
-			internal static bool isUsingOnlyPages = false;
-			public static void SetUsingOnlyPages(BaseJumperModule caller) {
-				if (!isUsingOnlyPages) {
-					Debug.Log($"{caller.ModuleName}: Adding OnlyPage functions");
-					try {
-						isUsingOnlyPages = true;
-						Globals.harmony.Patch(
-							original: typeof(BookModel)
-								.GetMethod(nameof(BookModel.SetXmlInfo), AccessTools.all),
-							postfix: new HarmonyMethod(typeof(SetXmlInfoPatch).GetMethod(nameof(Postfix)))
-						);
-						Debug.Log($"{caller.ModuleName}: Harmony patch applied");
-					} catch (AggregateException ae) {
-						ae.Handle(ex => {
-							if (caller != null) {
-								caller.AddErrorLog(ex);
-							} else {
-								Debug.LogError(ex);
-							}
-							return true;
-						});
-					} catch (Exception ex) {
-						if (caller != null) {
-							caller.AddErrorLog(ex);
-						} else {
-							Debug.LogError(ex);
-						}
-					}
-				}
+		public class SetXmlInfoPatch : LazyHarmony<SetXmlInfoPatch> {
+			protected override void Apply() {
+				Globals.harmony.Patch(
+					original: typeof(BookModel)
+						.GetMethod(nameof(BookModel.SetXmlInfo), AccessTools.all),
+					postfix: new Action<BookModel>(Postfix)
+					// postfix: new HarmonyMethod(typeof(SetXmlInfoPatch).GetMethod(nameof(Postfix)))
+				);
 			}
 			public static void Postfix(BookModel __instance) {
 				if (__instance.equipeffect is BookEquipEffect_Extended equipEffect) {

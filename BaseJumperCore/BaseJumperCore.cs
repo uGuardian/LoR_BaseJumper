@@ -347,7 +347,7 @@ namespace BaseJumperAPI {
 		public void AttachCharacterAssetBundle(string bundlePath, IEnumerable<string> skinNames, string internalPath) =>
 			AttachCharacterAssetBundle(new System.IO.FileInfo(bundlePath), skinNames, internalPath);
 		public void AttachCharacterAssetBundle(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath) {
-			AssetBundlePatches.SdResourceObjectPatch.SetUsingCharacterBundles(this);
+			AssetBundlePatches.SdResourceObjectPatch.Activate(this);
 			internalPath = internalPath.TrimEnd('/');
 			var bundleDic = BaseJumperCore.bundleDic;
 			// NOTE Double check to ensure this is atomic

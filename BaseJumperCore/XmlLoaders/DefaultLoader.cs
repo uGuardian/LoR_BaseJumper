@@ -100,11 +100,11 @@ namespace XmlLoaders {
 			if (_dictionary == null)
 				return;
 			foreach (BookXmlInfo bookXmlInfo in list) {
-				if (!OnlyPagePatches.SetXmlInfoPatch.isUsingOnlyPages && bookXmlInfo.EquipEffect.OnlyCard.Count > 0 &&
+				if (bookXmlInfo.EquipEffect.OnlyCard.Count > 0 &&
 					bookXmlInfo.EquipEffect is BookEquipEffect_Extended equipEffect &&
 					equipEffect.OnlyCard_Serialized.Any(i => i.IsWorkshop()))
 				{
-					OnlyPagePatches.SetXmlInfoPatch.SetUsingOnlyPages(module);
+					OnlyPagePatches.SetXmlInfoPatch.Activate(module);
 				}
 				_dictionary[bookXmlInfo.id] = bookXmlInfo;
 			}
