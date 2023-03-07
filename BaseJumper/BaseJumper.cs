@@ -27,7 +27,7 @@ public partial class BaseJumper : ModInitializer {
 	#pragma warning restore CS0436
 	public virtual bool IsCancelExecution => GetType() == typeof(BaseJumper);
 	protected Queue<(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath)> charAssetBundleQueue;
-	protected Queue<(string skinName, IEnumerable<string> dependencies)> charAssetBundleDependencyQueue;
+	protected Queue<(string modId, string skinName, IEnumerable<string> dependencies)> charAssetBundleDependencyQueue;
 	private HarmonyHelper harmonyHelper;
 	public HarmonyHelper HarmonyHelper {
 		get {
@@ -162,13 +162,13 @@ public partial class BaseJumper : ModInitializer {
 				var count = charAssetBundleQueue.Count;
 				for (int i = 0; i < count; i++) {
 					var (bundleFile, skinNames, internalPath) = charAssetBundleQueue.Dequeue();
-					module.AttachCharacterAssetBundle(bundleFile, skinNames, internalPath);
+					module.AttachCharacterAssetBundle(PackageId, bundleFile, skinNames, internalPath);
 				}
 				if (charAssetBundleDependencyQueue != null) {
 					var count2 = charAssetBundleDependencyQueue.Count;
 					for (int i = 0; i < count2; i++) {
-						var (skinName, dependencies) = charAssetBundleDependencyQueue.Dequeue();
-						module.AttachCharacterAssetBundleDependency(skinName, dependencies);
+						var (modId, skinName, dependencies) = charAssetBundleDependencyQueue.Dequeue();
+						module.AttachCharacterAssetBundleDependency(modId, skinName, dependencies);
 					}
 				}
 			}
@@ -186,13 +186,13 @@ public partial class BaseJumper : ModInitializer {
 		charAssetBundleQueue.Enqueue((bundleFile, skinNames, internalPath));
 	}
 
-	public void AttachCharacterAssetBundleDependencies(string skinName, params string[] dependencies) =>
-		AttachCharacterAssetBundleDependencies(skinName, (IEnumerable<string>)dependencies);
-	public void AttachCharacterAssetBundleDependencies(string skinName, IEnumerable<string> dependencies) {
+	public void AttachCharacterAssetBundleDependencies(string modId, string skinName, params string[] dependencies) =>
+		AttachCharacterAssetBundleDependencies(modId, skinName, (IEnumerable<string>)dependencies);
+	public void AttachCharacterAssetBundleDependencies(string modId, string skinName, IEnumerable<string> dependencies) {
 		if (charAssetBundleDependencyQueue == null) {
-			charAssetBundleDependencyQueue = new Queue<(string skinNames, IEnumerable<string> dependencies)>();
+			charAssetBundleDependencyQueue = new Queue<(string modId, string skinNames, IEnumerable<string> dependencies)>();
 		}
-		charAssetBundleDependencyQueue.Enqueue((skinName, dependencies));
+		charAssetBundleDependencyQueue.Enqueue((modId, skinName, dependencies));
 	}
 
 	public DirectoryInfo dataDir;

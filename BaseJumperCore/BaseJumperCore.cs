@@ -333,16 +333,24 @@ namespace BaseJumperAPI {
 
 		readonly public static ConcurrentDictionary<string, (System.IO.FileInfo bundle, string internalPath, List<string> prerequisites)> bundleDic =
 			new ConcurrentDictionary<string, (System.IO.FileInfo bundle, string internalPath, List<string> prerequisites)>(StringComparer.Ordinal);
+		[Obsolete("Retained for backward compatibility", true)]
 		public void AttachCharacterAssetBundle(DirectoryInfo resourceDir, string bundleName, IEnumerable<string> skinNames, string internalPath) =>
 			AttachCharacterAssetBundle(new System.IO.FileInfo($"{resourceDir.FullName}/AssetBundle/{bundleName}"), skinNames, internalPath);
+		public void AttachCharacterAssetBundle(string modId, DirectoryInfo resourceDir, string bundleName, IEnumerable<string> skinNames, string internalPath) =>
+			AttachCharacterAssetBundle(modId, new System.IO.FileInfo($"{resourceDir.FullName}/AssetBundle/{bundleName}"), skinNames, internalPath);
+		[Obsolete("Retained for backward compatibility", true)]
 		public void AttachCharacterAssetBundle(string bundlePath, IEnumerable<string> skinNames, string internalPath) =>
 			AttachCharacterAssetBundle(new System.IO.FileInfo(bundlePath), skinNames, internalPath);
-		public void AttachCharacterAssetBundle(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath) {
+		public void AttachCharacterAssetBundle(string modId, string bundlePath, IEnumerable<string> skinNames, string internalPath) =>
+			AttachCharacterAssetBundle(modId, new System.IO.FileInfo(bundlePath), skinNames, internalPath);
+		[Obsolete("Retained for backward compatibility", true)]
+		public void AttachCharacterAssetBundle(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath) =>
+			AttachCharacterAssetBundle(string.Empty, bundleFile, skinNames, internalPath);
+		public void AttachCharacterAssetBundle(string modId, System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath) {
 			AssetBundlePatches.SdResourceObjectPatch.SetUsingCharacterBundles(this);
 			internalPath = internalPath.TrimEnd('/');
 			var bundleDic = BaseJumperCore.bundleDic;
 			// NOTE Double check to ensure this is atomic
-			// TODO Figure out LorId support
 			string debugOutput = $"{ModuleName}: Attaching assetbundle {bundleFile.Name} to skins: {{{Environment.NewLine}";
 			if (bundleFile.Exists) {
 				foreach (var entry in skinNames) {
@@ -365,9 +373,15 @@ namespace BaseJumperAPI {
 			}
 			UnityEngine.Debug.Log(debugOutput += "}");
 		}
+		[Obsolete("Retained for backward compatibility", true)]
 		public void AttachCharacterAssetBundleDependency(string skin, params string[] dependencies) =>
 			AttachCharacterAssetBundleDependency(skin, (IEnumerable<string>)dependencies);
-		public void AttachCharacterAssetBundleDependency(string skin, IEnumerable<string> dependencies) {
+		public void AttachCharacterAssetBundleDependency(string modId, string skin, params string[] dependencies) =>
+			AttachCharacterAssetBundleDependency(modId, skin, (IEnumerable<string>)dependencies);
+		[Obsolete("Retained for backward compatibility", true)]
+		public void AttachCharacterAssetBundleDependency(string skin, IEnumerable<string> dependencies) =>
+			AttachCharacterAssetBundleDependency(string.Empty, skin, dependencies);
+		public void AttachCharacterAssetBundleDependency(string modId, string skin, IEnumerable<string> dependencies) {
 			// NOTE Double check to ensure this is atomic
 			var debugOutput = new System.Text.StringBuilder();
 			debugOutput.Append($"{ModuleName}: Attaching dependencies to skins: {{{Environment.NewLine}");

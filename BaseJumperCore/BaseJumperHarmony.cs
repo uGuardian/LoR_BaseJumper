@@ -16,7 +16,6 @@ using HarmonyLib;
 using UnityEngine;
 using BaseJumperAPI;
 using BaseJumperAPI.Caching;
-#pragma warning restore CS0618
 
 namespace BaseJumperAPI.Harmony {
 	public static class Globals {
@@ -112,6 +111,13 @@ namespace BaseJumperAPI.Harmony {
 				}
 			}
 		}
+		private static bool TryGetVanillaBundleId(string name, out int vanillaId) {
+			var subName = Path.GetFileNameWithoutExtension(name);
+			if (subName.StartsWith("char_", StringComparison.OrdinalIgnoreCase)) {
+				subName = name.Substring(5);
+			}
+			return int.TryParse(subName, out vanillaId);
+		}
 		private static void CacheSdResourceObject(this AssetBundleManagerRemake instance, string resourceName) {
 			if (string.IsNullOrEmpty(resourceName)) {return;}
 			if (instance._characterResourceCache.TryGetValue(resourceName, out var cache)) {
@@ -141,12 +147,16 @@ namespace BaseJumperAPI.Harmony {
 			if (prerequisites != null) {
 				loadedPrereqs = new List<string>();
 				foreach (var prereq in prerequisites) {
-					instance.LoadCharacterPrefab(prereq, "", out var prereqResource);
-					if (!string.IsNullOrEmpty(prereqResource)) {
-						loadedPrereqs.Add(prereqResource);
+					if (TryGetVanillaBundleId(prereq, out var id)) {
+						AssetBundleManagerRemake.GetCharacterResourcePath(id);
 					} else {
-						Debug.LogError(
-							$"BaseJumperCore: CharacterAppearance for Prerequisite {prereqResource} of {resourceName} doesn't exist");
+						instance.LoadCharacterPrefab(prereq, "", out var prereqResource);
+						if (!string.IsNullOrEmpty(prereqResource)) {
+							loadedPrereqs.Add(prereqResource);
+						} else {
+							Debug.LogError(
+								$"BaseJumperCore: CharacterAppearance for Prerequisite {prereqResource} of {resourceName} doesn't exist");
+						}
 					}
 				}
 				AssetBundleCache.AddPrereq(bundle.FullName, loadedPrereqs);
