@@ -216,6 +216,8 @@ public partial class BaseJumper : ModInitializer {
 			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 			if (Array.Exists(assemblies, a => a.GetName().Name == "BaseJumperCore")) {return;}
 
+			ErrorRemover.ErrorRemover.RemoveErrors();
+
 			// var dirs = Singleton<ModContentManager>.Instance._loadedContents.Select(c => c._dirInfo).AsParallel();
 			/*
 			var dirs = Enumerable.Empty<DirectoryInfo>().AsParallel();
