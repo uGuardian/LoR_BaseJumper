@@ -30,31 +30,38 @@ namespace BaseJumperAPI.Caching {
 				return instance;
 			}
 		}
-		public readonly ConcurrentDictionary<string, (AssetBundle bundle, int refCount)> characterCache =
-			new ConcurrentDictionary<string, (AssetBundle bundle, int refCount)>(StringComparer.Ordinal);
-		public readonly ConcurrentDictionary<AssetBundle, HashSet<string>> characterPrereqCache =
-			new ConcurrentDictionary<AssetBundle, HashSet<string>>();
-			
+		// The Unity API isn't thread safe, so this isn't either anymore.
+		public readonly Dictionary<string, (AssetBundle bundle, int refCount)> characterCache =
+			new Dictionary<string, (AssetBundle bundle, int refCount)>(StringComparer.Ordinal);
+		public readonly Dictionary<AssetBundle, HashSet<string>> characterPrereqCache =
+			new Dictionary<AssetBundle, HashSet<string>>();
+
 		public static void ReleaseAllCharacters(Dictionary<string, AssetBundleManagerRemake.AssetResourceCacheData> vanillaCache) {
 			var cache = Instance.characterCache;
+			var prereqCache = Instance.characterPrereqCache;
 			var hashTable = cache.Values.Select(x => x.bundle).ToHashSet();
-			var dicCopy = new Dictionary<string, AssetBundleManagerRemake.AssetResourceCacheData>(vanillaCache);
-			foreach (var pair in dicCopy) {
+			var toRemove = new List<string>(vanillaCache.Count);
+			foreach (var pair in vanillaCache) {
 				if (hashTable.Contains(pair.Value.asset)) {
-					vanillaCache.Remove(pair.Key);
+					toRemove.Add(pair.Key);
 				}
 			}
-			foreach (var bundle in hashTable) {
-				bundle.Unload(true);
+			foreach (var key in toRemove) {
+				vanillaCache.Remove(key);
+			}
+			foreach (var tuple in cache.Values) {
+				tuple.bundle?.Unload(true);
+			}
+			foreach (var bundle in prereqCache.Keys) {
+				bundle?.Unload(true);
 			}
 			cache.Clear();
-			Instance.characterPrereqCache.Clear();
+			prereqCache.Clear();
 		}
-		// TODO Improve thread safety
 		public static AssetBundle GetCachedCharacter(FileInfo file) => GetCachedCharacter(file.FullName);
 		public static AssetBundle GetCachedCharacter(string file) {
 			var cache = Instance.characterCache;
-			bool success = cache.TryRemove(file, out var entry);
+			bool success = cache.TryGetValue(file, out var entry);
 			(AssetBundle bundle, int refCount) = entry;
 			if (success) {
 				if (bundle == null) {
@@ -62,12 +69,12 @@ namespace BaseJumperAPI.Caching {
 					bundle = AssetBundle.LoadFromFile(file);
 				}
 				refCount++;
-				cache.TryAdd(file, (bundle, refCount));
+				cache[file] = (bundle, refCount);
 				return bundle;
 			}
 			bundle = AssetBundle.LoadFromFile(file);
 			refCount = 1;
-			cache.TryAdd(file, (bundle, refCount));
+			cache[file] = (bundle, refCount);
 			return bundle;
 		}
 		public static void AddPrereq(string file, IEnumerable<string> prereqs) {
@@ -91,33 +98,43 @@ namespace BaseJumperAPI.Caching {
 		public static bool ReleaseCachedCharacter(string file, out int remainingRefs) {
 			var cache = Instance.characterCache;
 			var prereqCache = Instance.characterPrereqCache;
-			if (cache.TryRemove(file, out var entry)) {
-				(AssetBundle bundle, int refCount) = entry;
-				bool hasDeps = prereqCache.TryRemove(bundle, out var deps);
+			if (cache.TryGetValue(file, out var entry)) {
+				var bundle = entry.bundle;
+				remainingRefs = entry.refCount;
+				bool hasDeps = prereqCache.TryGetValue(bundle, out var deps);
 				if (bundle == null) {
 					foreach (var dep in deps) {
-						for (int i = 0; i < refCount; i++) {
+						for (int i = 0; i < remainingRefs; i++) {
 							Singleton<AssetBundleManagerRemake>.Instance.ReleaseSdObject(dep);
 						}
 					}
 					remainingRefs = 0;
 					return true;
 				}
-				refCount--;
+				remainingRefs--;
 				if (hasDeps) {
 					foreach (var dep in deps) {
 						Singleton<AssetBundleManagerRemake>.Instance.ReleaseSdObject(dep);
 					}
 				}
-				if (refCount > 0) {
-					cache.TryAdd(file, (bundle, refCount));
-					if (hasDeps) {
-						prereqCache.TryAdd(bundle, deps);
-					}
+				if (remainingRefs > 0) {
+					cache[file] = (bundle, remainingRefs);
 				} else {
-					bundle.Unload(true);
+					int vanillaRefCount = 0;
+					foreach (var vanillaCacheData in Singleton<AssetBundleManagerRemake>.Instance._characterResourceCache.Values) {
+						if (vanillaCacheData.asset == bundle) {
+							vanillaRefCount++;
+						}
+					}
+					if (vanillaRefCount > 1) {
+						remainingRefs = vanillaRefCount - 1;
+						cache[file] = (bundle, remainingRefs);
+					} else {
+						cache.Remove(file);
+						prereqCache.Remove(bundle);
+						bundle.Unload(true);
+					}
 				}
-				remainingRefs = refCount;
 				return true;
 			} else {
 				remainingRefs = 0;

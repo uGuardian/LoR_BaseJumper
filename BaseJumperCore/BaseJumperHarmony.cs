@@ -69,18 +69,15 @@ namespace BaseJumperAPI.Harmony {
 					harmony.PatchAsync(
 						original: typeof(AssetBundleManagerRemake)
 							.GetMethod(nameof(AssetBundleManagerRemake.UnloadAllCharacterCache), AccessTools.all),
-						prefix: new Action(ClearPrefix)
+						prefix: new Action(ClearPrefix),
+						finalizer: new Action<Exception>(ClearFinalizer)
 					)
 				);
 			}
 
 			public static void GetPrefix(string resourceName) {
 				try {
-					var instance = Singleton<AssetBundleManagerRemake>.Instance;
-					if (instance._characterResourceCache.ContainsKey(resourceName)) {
-						return;
-					}
-					instance.CacheSdResourceObject(resourceName);
+					Singleton<AssetBundleManagerRemake>.Instance.CacheSdResourceObject(resourceName);
 				} catch (Exception ex) {
 					Debug.LogException(ex);
 				}
@@ -94,16 +91,41 @@ namespace BaseJumperAPI.Harmony {
 			}
 			public static void ClearPrefix() {
 				try {
-					Singleton<AssetBundleManagerRemake>.Instance.ClearAllCharacterCache();
+					Singleton<AssetBundleManagerRemake>.Instance.ReleaseAllCharacters();
 				} catch (Exception ex) {
 					Debug.LogException(ex);
+				}
+			}
+			public static void ClearFinalizer(Exception __exception) {
+				// This is a sanity check to prevent crashes in the event something goes wrong.
+				if (__exception != null) {
+					Debug.LogError("Forcing completion of UnloadAllCharacterCache()");
+					var vanillaCache = Singleton<AssetBundleManagerRemake>.Instance._characterResourceCache;
+					foreach (var entry in vanillaCache) {
+						try {
+							entry.Value.asset.Unload(true);
+						} catch (Exception ex) {
+							Debug.LogError($"Exception for cache {entry.Key}:{Environment.NewLine}{ex}", entry.Value?.asset);
+						}
+					}
+					vanillaCache.Clear();
 				}
 			}
 		}
 		private static void CacheSdResourceObject(this AssetBundleManagerRemake instance, string resourceName) {
 			if (string.IsNullOrEmpty(resourceName)) {return;}
-			var parts = resourceName.Split(new []{'_'}, 2);
-			if (!BaseJumperCore.bundleDic.TryGetValue(parts[1], out var entry)) {
+			if (instance._characterResourceCache.TryGetValue(resourceName, out var cache)) {
+				if (cache.asset != null) {
+					#if DEBUG
+					Debug.Log($"Cache for {resourceName} already exists");
+					#endif
+					return;
+				} else {
+					Debug.LogError($"AssetBundle for {resourceName} was null, removing it");
+					instance._characterResourceCache.Remove(resourceName);
+				}
+			}
+			if (!BaseJumperCore.bundleDic.TryGetValue(GetActualResourceName(resourceName), out var entry)) {
 				#if AssetBundleDebug
 				Debug.LogWarning($"BaseJumperCore: Key {resourceName} did not exist in asset bundle dictionary");
 				#endif
@@ -167,9 +189,15 @@ namespace BaseJumperAPI.Harmony {
 		}
 		private static void ReleaseSdResourceObject(this AssetBundleManagerRemake instance, string resourceName) {
 			if (string.IsNullOrEmpty(resourceName)) {return;}
-			var parts = resourceName.Split(new []{'_'}, 2);
-			if (parts.Length <= 1) {return;}
-			if (!BaseJumperCore.bundleDic.TryGetValue(parts[1], out var entry))
+			var vanillaCache = instance._characterResourceCache;
+			if (vanillaCache.TryGetValue(resourceName, out var cache)) {
+				if (cache.asset == null) {
+					Debug.LogError($"AssetBundle for {resourceName} was null, removing it");
+					vanillaCache.Remove(resourceName);
+					return;
+				}
+			} else {return;}
+			if (!BaseJumperCore.bundleDic.TryGetValue(GetActualResourceName(resourceName), out var entry))
 			{
 				#if AssetBundleDebug
 				Debug.LogWarning($"BaseJumperCore: Key {resourceName} did not exist in asset bundle dictionary");
@@ -179,12 +207,34 @@ namespace BaseJumperAPI.Harmony {
 			var (bundle, internalPath, prerequisites) = entry;
 			if (AssetBundleCache.ReleaseCachedCharacter(bundle.FullName, out int refCount)) {
 				if (refCount <= 0) {
-					instance._characterResourceCache.Remove(resourceName, out var data);
+					vanillaCache.Remove(resourceName, out _);
 				}
 			}
 		}
-		private static void ClearAllCharacterCache(this AssetBundleManagerRemake instance) {
+		private static void ReleaseAllCharacters(this AssetBundleManagerRemake instance) {
 			AssetBundleCache.ReleaseAllCharacters(instance._characterResourceCache);
+		}
+		private static string GetActualResourceName(string resourceName) {
+			var underscoreFirst = resourceName.IndexOf('_');
+			var underscoreLast = resourceName.LastIndexOf('_');
+			string actualName;
+			bool isGendered = false;
+			if (underscoreFirst != underscoreLast) {
+				var genderString = resourceName.Substring(underscoreLast+1);
+				foreach (var gender in Enum.GetNames(typeof(Gender))) {
+					if (string.Equals(genderString, gender, StringComparison.OrdinalIgnoreCase)) {
+						isGendered = true;
+						break;
+					}
+				}
+			}
+			var underscoreFirstPlusOne = underscoreFirst+1;
+			if (isGendered) {
+				actualName = resourceName.Substring(underscoreFirstPlusOne, underscoreLast - underscoreFirstPlusOne);
+			} else {
+				actualName = resourceName.Substring(underscoreFirstPlusOne);
+			}
+			return actualName;
 		}
 	}
 	public static class EmotionCardArtPatches {
