@@ -123,6 +123,7 @@ namespace BaseJumperAPI.Caching {
 					int vanillaRefCount = 0;
 					foreach (var vanillaCacheData in Singleton<AssetBundleManagerRemake>.Instance._characterResourceCache.Values) {
 						if (vanillaCacheData.asset == bundle) {
+							vanillaCacheData.refCount = ushort.MaxValue;
 							vanillaRefCount++;
 						}
 					}

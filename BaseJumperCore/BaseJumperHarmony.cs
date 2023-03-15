@@ -182,7 +182,7 @@ namespace BaseJumperAPI.Harmony {
 			AssetBundleManagerRemake.AssetResourceCacheData resourceCacheData = new AssetBundleManagerRemake.AssetResourceCacheData {
 				asset = assetBundle,
 				name = resourceName,
-				refCount = 10000,
+				refCount = ushort.MaxValue,
 				resObject = gameObject,
 			};
 			instance._characterResourceCache.Add(resourceName, resourceCacheData);
