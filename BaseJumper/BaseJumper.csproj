@@ -6,6 +6,7 @@
 	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>C:\Users\Sean\Documents\Github\LoRMods\uGuardian_LoR.snk</AssemblyOriginatorKeyFile>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<NoWarn>CS8002</NoWarn>
   </PropertyGroup>
   <ItemGroup>
 	<Compile Include="..\XMLTypes.cs"/>
