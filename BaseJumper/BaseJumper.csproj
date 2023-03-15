@@ -10,6 +10,7 @@
   <ItemGroup>
 	<Compile Include="..\XMLTypes.cs"/>
 	<ProjectReference Include="..\BaseJumperCore\BaseJumperCore.csproj" />
+	<ProjectReference Include="..\..\ConfigAPI\ConfigAPI.csproj" />
 	<Reference Include="Accessibility">
 	  <HintPath>..\..\libs\Managed\Accessibility.dll</HintPath>
 	</Reference>
