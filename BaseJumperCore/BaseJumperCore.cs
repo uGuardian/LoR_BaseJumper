@@ -14,6 +14,7 @@ using Mod.XmlExtended;
 using LOR_XML;
 using XmlLoaders;
 using BaseJumperAPI.Harmony;
+using BaseJumperAPI.Caching;
 
 namespace BaseJumperAPI {
 	public abstract class GlobalInitializer {
@@ -331,7 +332,7 @@ namespace BaseJumperAPI {
 			}
 		}
 
-		readonly public static ConcurrentDictionary<string, (System.IO.FileInfo bundle, string internalPath, List<string> prerequisites)> bundleDic =
+		readonly internal static ConcurrentDictionary<string, (System.IO.FileInfo bundle, string internalPath, List<string> prerequisites)> charBundleDic =
 			new ConcurrentDictionary<string, (System.IO.FileInfo bundle, string internalPath, List<string> prerequisites)>(StringComparer.Ordinal);
 		[Obsolete("Retained for backward compatibility", true)]
 		public void AttachCharacterAssetBundle(DirectoryInfo resourceDir, string bundleName, IEnumerable<string> skinNames, string internalPath) =>

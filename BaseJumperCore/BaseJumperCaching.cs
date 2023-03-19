@@ -143,4 +143,160 @@ namespace BaseJumperAPI.Caching {
 			}
 		}
 	}
+	public interface IAssetBundleContainer : IDisposable {
+		string Name {get;}
+		ConcurrentDictionary<AssetBundleContainer_RefToken, byte> RefTokens {get;}
+		AssetBundle Bundle {get;}
+		AssetBundleContainer_RefToken Load();
+		void Unload(AssetBundleContainer_RefToken token);
+	}
+	public sealed class AssetBundleContainer_RefToken : IDisposable {
+		internal AssetBundleContainer_RefToken(IAssetBundleContainer container) {
+			Container = container;
+		}
+		public IAssetBundleContainer Container {get;}
+		bool disposedValue;
+
+		void Dispose(bool disposing) {
+			if (!disposedValue) {
+				disposedValue = true;
+				Container.Unload(this);
+			}
+		}
+
+		~AssetBundleContainer_RefToken() {
+		    // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		    Dispose(disposing: false);
+		}
+
+		public void Dispose() {
+			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+			Dispose(disposing: true);
+			GC.SuppressFinalize(this);
+		}
+	}
+	public abstract class CharacterBundleContainer : IAssetBundleContainer {
+		public string Name {get; protected set;}
+		public ConcurrentDictionary<AssetBundleContainer_RefToken, byte> RefTokens {get;}
+		public AssetBundle Bundle {get; set;}
+
+		public CharacterBundleContainer() {
+			RefTokens = new ConcurrentDictionary<AssetBundleContainer_RefToken, byte>();
+		}
+
+		public abstract AssetBundleContainer_RefToken Load();
+		public abstract void Unload(AssetBundleContainer_RefToken token);
+
+		internal bool disposedValue;
+
+		protected virtual void Dispose(bool disposing) {
+			if (!disposedValue) {
+				DisposeAllTokens();
+				disposedValue = true;
+			}
+		}
+
+		~CharacterBundleContainer() {
+		    // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+		    Dispose(disposing: false);
+		}
+
+		void IDisposable.Dispose() {
+			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+			Dispose(disposing: true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected void DisposeAllTokens() {
+			var queue = new Queue<AssetBundleContainer_RefToken>(RefTokens.Keys);
+			while (queue.Count != 0) {
+				queue.Dequeue().Dispose();
+			}
+		}
+	}
+	public class VanillaCharacterBundleContainer : CharacterBundleContainer {
+		public static readonly ConcurrentDictionary<string, byte> overriddenVanillaCharacters =
+			new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+		private static readonly Dictionary<ResourceXmlInfo, VanillaCharacterBundleContainer> containers =
+			new Dictionary<ResourceXmlInfo, VanillaCharacterBundleContainer>();
+		static readonly object creationLocker = new object();
+		static ResourceInfoManager Manager => ResourceInfoManager.Instance;
+		readonly ResourceXmlInfo info;
+		public int ID => info.ID;
+		private VanillaCharacterBundleContainer(ResourceXmlInfo info) : base() {
+			this.info = info;
+			Name = info.fileName;
+			containers.Add(info, this);
+		}
+		internal static VanillaCharacterBundleContainer GetInstance(ResourceXmlInfo info) => GetInstance(info, false);
+		private static VanillaCharacterBundleContainer GetInstance(ResourceXmlInfo info, bool isLoop) {
+			if (containers.TryGetValue(info, out var container)) {
+				if ((!container?.disposedValue) ?? false) {
+					return container;
+				} else {
+					containers.Remove(info);
+				}
+			}
+			if (isLoop) {
+				return new VanillaCharacterBundleContainer(info);
+			} else {
+				lock (creationLocker) {
+					return GetInstance(info, true);
+				}
+			}
+		}
+		internal static VanillaCharacterBundleContainer GetInstance(string name) {
+			if (TryGetVanillaBundleId(name, out int vanillaId)) {
+				return GetInstance(vanillaId);
+			}
+			if (Manager._characterResourceTableByName.TryGetValue(name, out var info)) {
+				return GetInstance(info);
+			}
+			return null;
+		}
+		internal static VanillaCharacterBundleContainer GetInstance(int id) {
+			if (Manager._characterResourceTableById.TryGetValue(id, out var info)) {
+				return GetInstance(info);
+			}
+			return null;
+		}
+		private static bool TryGetVanillaBundleId(string name, out int vanillaId) {
+			var subName = Path.GetFileNameWithoutExtension(name);
+			if (subName.StartsWith("char_", StringComparison.OrdinalIgnoreCase)) {
+				subName = name.Substring(5);
+			}
+			return int.TryParse(subName, out vanillaId);
+		}
+		public override AssetBundleContainer_RefToken Load() {
+			if (overriddenVanillaCharacters.ContainsKey(Name)) {
+				if (Bundle == null) {
+					Bundle = AssetBundle.LoadFromFile(AssetBundleManagerRemake.GetCharacterResourcePath(ID));
+				}
+			} else {
+				// REVIEW
+				AssetBundleManagerRemake.Instance.GetSdResourceObject(Name);
+			}
+			var token = new AssetBundleContainer_RefToken(this);
+			if (!RefTokens.TryAdd(token, default)) {
+				throw new InvalidOperationException("Somehow a duplicate RefToken got produced");
+			}
+			return token;
+		}
+		public override void Unload(AssetBundleContainer_RefToken token) {
+			token.Dispose();
+			if (overriddenVanillaCharacters.ContainsKey(Name)) {
+				if (RefTokens.Count <= 0) {
+					Bundle?.Unload(true);
+				}
+			}
+		}
+	}
+	public class CustomCharacterBundleContainer : CharacterBundleContainer {
+		public override void Unload(AssetBundleContainer_RefToken token) {
+			token.Dispose();
+			if (RefTokens.Count <= 0) {
+				Bundle.Unload(true);
+			}
+		}
+	}
 }
