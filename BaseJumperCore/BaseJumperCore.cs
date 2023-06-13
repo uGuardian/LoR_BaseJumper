@@ -181,7 +181,7 @@ namespace BaseJumperAPI {
 		*/
 		#endregion
 	}
-	public class BaseJumperCore : BaseJumperModule {
+	public partial class BaseJumperCore : BaseJumperModule {
 		public BaseJumperCore(string packageId) : base(packageId) {}
 		public BaseJumperCore(ModContent modContent) : base(modContent) {}
 		public BaseJumperCore(string packageId, ModContent modContent, DirectoryInfo dirInfo) : base(packageId, modContent, dirInfo) {}
