@@ -16,14 +16,10 @@ using BaseJumperAPI;
 using BaseJumperAPI.DependencyManager;
 using System.Runtime.CompilerServices;
 
-public class BaseJumper : ModInitializer {
-	public virtual string PackageId {get; protected set;}
-	private ModContent modContent;
-	public ModContent ModContent { get => modContent; protected set => modContent = value; }
-	private DirectoryInfo _dirInfo;
-	public DirectoryInfo DirInfo { get => _dirInfo; protected set => _dirInfo = value; }
+public class BaseJumper : BaseJumper_LaunchPad {
+	public override string ModuleName => "BaseJumper";
 	protected virtual bool AutoInitXmls => true;
-	public virtual bool IsCancelExecution => GetType() == typeof(BaseJumper);
+	public override bool IsCancelExecution => GetType() == typeof(BaseJumper);
 	protected Queue<(System.IO.FileInfo bundleFile, IEnumerable<string> skinNames, string internalPath)> charAssetBundleQueue;
 	protected Queue<(string skinName, IEnumerable<string> dependencies)> charAssetBundleDependencyQueue;
 	private HarmonyHelper harmonyHelper;
@@ -35,37 +31,6 @@ public class BaseJumper : ModInitializer {
 			return harmonyHelper;
 		}
 	}
-	public virtual string DepId => null;
-	public virtual Version Version => new Version(1, 0);
-	public virtual int Priority => BaseJumperAPI.Priority.Normal;
-	public struct Dependency {
-		public string modId;
-		public string depId;
-		public Version minVersion;
-		public Version maxVersion;
-		public bool isPostDependency;
-		public bool optional;
-		public ulong steamId;
-
-		public Dependency(
-			string modId,
-			string depId = null,
-			Version minVersion = null,
-			Version maxVersion = null,
-			bool isPostDependency = false,
-			bool optional = false,
-			ulong steamId = 0)
-		{
-			this.modId = modId;
-			this.depId = depId;
-			this.minVersion = minVersion;
-			this.maxVersion = maxVersion;
-			this.isPostDependency = isPostDependency;
-			this.optional = optional;
-			this.steamId = steamId;
-		}
-	}
-	public virtual Dependency[] Dependencies => null;
 
 	~BaseJumper() {
 		BaseJumperModule.KillAllModule(this);
@@ -94,61 +59,11 @@ public class BaseJumper : ModInitializer {
 		}
 	}
 	#endif
-	
-	public override void OnInitializeMod() {
-		try {
-			LoadAssemblies();
-			if (IsCancelExecution) {return;}
-			mainThreadId = Environment.CurrentManagedThreadId;
-			if (PackageId == null) {
-				PackageId = GetIdFromXml(GetType().Assembly);
-			} else {
-				PackageId = PackageId;
-			}
-			RegisterDependencies();
-		} catch (Exception ex) {
-			AddErrorLog(ex);
-		} finally {
-			PushErrorLogs();
-		}
-	}
-	private void RegisterDependencies() {
-		var depInstance = DependencyManager.Register(PackageId, DependencyManagedInitialize, DepId, Version, Priority);
-		var deps = Dependencies;
-		if (deps != null) {
-			foreach (var dep in deps) {
-				depInstance.AddDependency(dep.modId,
-					dep.depId,
-					dep.minVersion,
-					dep.maxVersion,
-					dep.isPostDependency,
-					dep.optional,
-					dep.steamId);
-			}
-		}
-	}
-	private void DependencyManagedInitialize() {
-		try {
-			AutoInitDataMethod();
-			BaseJumper_OnInitialize();
-			AutoInit();
-		} catch (Exception ex) {
-			AddErrorLog(ex);
-		} finally {
-			PushErrorLogs();
-		}
-	}
-	private void AutoInitDataMethod() {
-		ModContent = Singleton<ModContentManager>.Instance.GetModContent(PackageId);
-		DirInfo = ModContent._dirInfo;
-		dataDir = DirInfo.EnumerateDirectories("Data").FirstOrDefault();
-		resourceDir = DirInfo.EnumerateDirectories("Resource").FirstOrDefault();
-	}
-	public virtual void BaseJumper_OnInitialize() {}
-	private void AutoInit() {
+
+	sealed protected override void AutoInit() {
+		var module = BaseJumperModule.GetModule<BaseJumperCore>(this) ??
+			BaseJumperModule.NewModule(this, new BaseJumperCore(PackageId, ModContent, DirInfo));
 		if (AutoInitXmls || charAssetBundleQueue != null) {
-			var module = BaseJumperModule.GetModule<BaseJumperCore>(this) ??
-				BaseJumperModule.NewModule(this, new BaseJumperCore(PackageId, ModContent, DirInfo));
 			if (AutoInitXmls) {
 				if (dataDir == null) {
 					throw new FileNotFoundException("Data directory does not exist");
@@ -192,18 +107,6 @@ public class BaseJumper : ModInitializer {
 		charAssetBundleDependencyQueue.Enqueue((skinName, dependencies));
 	}
 
-	public DirectoryInfo dataDir;
-	public DirectoryInfo resourceDir;
-	public static void LoadAssemblies() {
-		var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-		if (Array.Exists(assemblies, a => a.GetName().Name == "BaseJumperCore")) {return;}
-		var assembly = assemblies
-			.Where(a => a.GetName().Name == Assembly.GetExecutingAssembly().GetName().Name)
-			.OrderByDescending(v => v.GetName().Version)
-			.First();
-		UnityEngine.Debug.Log($"BaseJumper: Loading assemblies using Version {assembly.GetName().Version}");
-		assembly.GetType(nameof(BaseJumper)).GetMethod(nameof(LoadAssemblies_VersionSafe)).Invoke(null, null);
-	}
 	[Obsolete("Don't call this directly, call LoadAssemblies() instead", true)]
 	public static void LoadAssemblies_VersionSafe() {
 		new AssemblyLoader().LoadAssemblies();
@@ -382,115 +285,5 @@ public class BaseJumper : ModInitializer {
 			}
 		}
 		#endregion
-	}
-
-	#region ErrorHandler
-	private readonly ConcurrentQueue<(string msg, Exception e, bool warning)> queuedErrorLogs
-		= new ConcurrentQueue<(string msg, Exception e, bool warning)>();
-	public virtual string ModuleName => "BaseJumper";
-
-	protected internal void AddErrorLog(string msg) {
-		queuedErrorLogs.Enqueue(($"pid: ({PackageId}) {ModuleName}:{Environment.NewLine}{msg}", null, false));
-		// AddErrorLog(Singleton<ModContentManager>.Instance, $"pid: ({PackageId}) BaseJumper:{Environment.NewLine}", ex);
-	}
-	protected internal void AddErrorLog(Exception ex) {
-		queuedErrorLogs.Enqueue(($"pid: ({PackageId}) {ModuleName}:{Environment.NewLine}", ex, false));
-		// AddErrorLog(Singleton<ModContentManager>.Instance, $"pid: ({PackageId}) BaseJumper:{Environment.NewLine}", ex);
-	}
-	protected internal void AddWarningLog(string msg) {
-		queuedErrorLogs.Enqueue(($"pid: ({PackageId}) {ModuleName}:{Environment.NewLine}{msg}", null, true));
-		// AddErrorLog(Singleton<ModContentManager>.Instance, $"pid: ({PackageId}) BaseJumper:{Environment.NewLine}", ex);
-	}
-	protected internal void AddWarningLog(Exception ex) {
-		queuedErrorLogs.Enqueue(($"pid: ({PackageId}) {ModuleName}:{Environment.NewLine}", ex, true));
-		// AddErrorLog(Singleton<ModContentManager>.Instance, $"pid: ({PackageId}) BaseJumper:{Environment.NewLine}", ex);
-	}
-	public int mainThreadId;
-	public void PushErrorLogs() {
-		if (Environment.CurrentManagedThreadId != mainThreadId) {return;}
-		int count = queuedErrorLogs.Count;
-		for (int i = 0; i < count; i++) {
-			queuedErrorLogs.TryDequeue(out var entry);
-			HandleLog(entry);
-		}
-		var baseJumper = BaseJumperModule.GetModule(this);
-		if (baseJumper != null) {
-			var coreLogs = baseJumper.GetErrorLogs();
-			int count2 = coreLogs.Count;
-			for (int i = 0; i < count2; i++) {
-				coreLogs.TryDequeue(out var entry);
-				entry.msg = $"pid: ({PackageId}) {entry.msg}";
-				HandleLog(entry);
-			}
-		}
-	}
-	static void HandleLog((string msg, Exception e, bool warning) tuple) {
-		var (msg, e, warning) = tuple;
-		switch (warning) {
-			case false when e != null:
-				AddErrorLog(Singleton<ModContentManager>.Instance, msg, e);
-				break;
-			case true when e != null:
-				AddWarningLog(Singleton<ModContentManager>.Instance, msg, e);
-				break;
-			case false when e == null:
-				AddErrorLog(Singleton<ModContentManager>.Instance, msg);
-				break;
-			case true when e == null:
-				AddWarningLog(Singleton<ModContentManager>.Instance, msg);
-				break;
-		}
-	}
-	private static void AddErrorLog(ModContentManager manager, string msg) {
-		UnityEngine.Debug.LogError(msg);
-		manager.GetErrorLogs().Add($"{msg}{Environment.NewLine}");
-	}
-
-	private static void AddErrorLog(ModContentManager manager, string msg, Exception e) {
-		UnityEngine.Debug.LogError(msg);
-		UnityEngine.Debug.LogException(e);
-		manager.GetErrorLogs().Add($"{msg}{e.Message}{Environment.NewLine}");
-	}
-	private static void AddWarningLog(ModContentManager manager, string msg) {
-		UnityEngine.Debug.LogWarning(msg);
-		manager.GetErrorLogs().Add($"<color=yellow>{msg}</color>{Environment.NewLine}");
-	}
-
-	private static void AddWarningLog(ModContentManager manager, string msg, Exception e) {
-		UnityEngine.Debug.LogWarning(msg);
-		UnityEngine.Debug.LogException(e);
-		manager.GetErrorLogs().Add($"<color=yellow>{msg}{e.Message}</color>{Environment.NewLine}");
-	}
-	#endregion
-	public string GetIdFromXml(Assembly assembly) {
-		DirectoryInfo dirInfo = new System.IO.FileInfo(assembly.Location).Directory.Parent;
-		var files = dirInfo.EnumerateFiles("StageModInfo.xml");
-		while (files.FirstOrDefault() == null) {
-			dirInfo = dirInfo.Parent;
-			files = dirInfo.EnumerateFiles("StageModInfo.xml");
-		}
-		string uniqueId;
-		using (var streamReader = files.First().OpenRead()) {
-			NormalInvitation invInfo = (NormalInvitation) new XmlSerializer(typeof(NormalInvitation)).Deserialize(streamReader);
-			if (string.IsNullOrEmpty(invInfo.workshopInfo.uniqueId) || string.Equals(invInfo.workshopInfo.uniqueId, "-1", StringComparison.Ordinal)) {
-				invInfo.workshopInfo.uniqueId = dirInfo.Name;
-			}
-			uniqueId = invInfo.workshopInfo.uniqueId;
-		}
-		return uniqueId;
-	}
-}
-
-namespace BaseJumperAPI {
-	public static class Priority {
-		public const int Last = 0;
-		public const int VeryLow = 100;
-		public const int Low = 200;
-		public const int LowerThanNormal = 300;
-		public const int Normal = 400;
-		public const int HigherThanNormal = 500;
-		public const int High = 600;
-		public const int VeryHigh = 700;
-		public const int First = 800;
 	}
 }

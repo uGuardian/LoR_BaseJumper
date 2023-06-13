@@ -18,7 +18,7 @@ using BaseJumperAPI.Harmony;
 
 namespace BaseJumperAPI {
 	public static class Globals {
-		public const string Version = "0.0.6.2";
+		public const string Version = "0.0.7.0";
 	}
 	public static class Extensions {
 		public static string TrimEnd(this string source, string value) {
@@ -296,6 +296,7 @@ namespace BaseJumperAPI {
 			XmlTypes.Add(XmlSerializerEntry<T, O>(actions, out var entry), entry);
 		}
 		public void InitCustomXmls(DirectoryInfo dataDir) {
+			// REVIEW
 			Task.Run(async () => await InitCustomXmlsAsync(dataDir)).Wait();
 			foreach (var action in Finalizers) {
 				try {
